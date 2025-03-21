@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { API_BASE_URL } from "../config";
 import "../../styles/Home.scss"
 import axios from "axios";
+import { useSearchParams } from "react-router-dom";
 
 
 // todo :  change the frontend url when sorting/filterig request '
@@ -34,59 +35,83 @@ const SORT_OPTIONS = [
 export default function Home() {
 
     const [products, setProducts] = useState<Product[]>([]);
-    const [currentPage, setCurrentPage] = useState<number>(1)
-    const [sort, setSort] = useState<string>("reviews_desc")
-    const [searchQuery, setSearchQuery] = useState<string>("")
-
+    const [searchInput, setSearchInput] = useState<string>("")
+    const [searchParams, setSearchParams] = useSearchParams();
+    const sort = searchParams.get("sortBy") || "reviews_desc";
+    const currentPage = parseInt(searchParams.get("page") || "1");
 
     useEffect(() => {
-        fetchProducts()
-        console.log('fetched')
-    }, [currentPage])
-
-    async function fetchProducts() {
-        try{
-            const response  = await axios.get(`${API_BASE_URL}/products?limit=16&page=${currentPage}&sortBy=${sort}`)
-            setProducts(response.data as Product[])
-
-        }
-        catch(e) {
-            console.log(e)
-        }
-    }
+        const fetchProducts = async () => {
+            const searchQuery = searchParams.get("searchQuery") || "";  // this will only exist fi user click search button
+            const sortBy = searchParams.get("sortBy") || "reviews_desc";
+            const page = Number(searchParams.get("page")) || 1;
+        
+            const params: Record<string, string | number> = {
+                sortBy,
+                page,
+                limit: 16,
+            };
+        
+            let endpoint = `${API_BASE_URL}/products`;
+            if (searchQuery.length >= 4) {
+                endpoint = `${API_BASE_URL}/products/search`;
+                params.searchQuery = searchQuery;
+            }
+        
+            const response = await axios.get(endpoint, { params });
+            setProducts(response.data as Product[]);
+        };
+      
+        fetchProducts();
+    }, [searchParams]);
     
     async function searchProducts() {
-        if (searchQuery.length < 4) {
-            console.log('must be longer than 4 chracters')
-            return
-        }
-        try{
-            const response = await axios.get(`${API_BASE_URL}/products/search?limit=16&page=${currentPage}&searchQuery=${searchQuery}`);
-            setProducts(response.data as Product[])
-        }
-        catch(e) {
-            console.log(e)
-        }
+        if (searchInput.trim().length < 4) return;
+
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("searchQuery", searchInput);
+        newParams.set("page", "1"); 
+        setSearchParams(newParams);
     }
 
-    function incrementPage() {
-        //console.log('d')
-        setCurrentPage((prev) => prev+1 )
+    const incrementPage = () => {
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          const page = parseInt(next.get("page") || "1");
+          next.set("page", (page + 1).toString());
+          return next;
+        });
+    };
+      
+    const decrementPage = () => {
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          const page = parseInt(next.get("page") || "1");
+          if (page > 1) next.set("page", (page - 1).toString());
+          return next;
+        });
+    };
+
+    function handleSortChange(newSort: string) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set("sortBy", newSort);
+        nextParams.set("page", "1");
+        setSearchParams(nextParams);
+    };
+
+    function clearResults() {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("searchQuery");
+        setSearchParams(newParams);
+        setSearchInput("");
     }
 
-    function decrementPage() {
-        if (currentPage != 1) {
-            setCurrentPage((prev) => prev-1)
-        } 
-    }
-    //console.log(sort)
 
     return (
         <div className="home">
             <div>
-                <button onClick={fetchProducts}>fetch</button>
                 <div className="dropdown-container">
-                    <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                    <select value={sort} onChange={(e) => handleSortChange(e.target.value)}>
                     {SORT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                         {option.label}
@@ -95,8 +120,9 @@ export default function Home() {
                     </select>
                 </div>
                 <div>
-                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
                     <button onClick={searchProducts}>search</button>
+                    <button onClick={clearResults}>Clear results</button>
                 </div>
             </div>
             <div className="products">
