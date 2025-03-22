@@ -5,10 +5,6 @@ import axios from "axios";
 import { useSearchParams } from "react-router-dom";
 
 
-// todo :  change the frontend url when sorting/filterig request '
-// still use states for queries , user clicks search - change url with that new query - make usesearchParam url dependancy for useeffect - 
-// useeffect will fetch data with the values in url instead
-
 interface Product{
     id : string;
     title : string;
@@ -18,7 +14,7 @@ interface Product{
     reviews : number;
     price : number;
     is_bestseller : boolean;
-    categoryname : string
+    subcategory : string
 }
 
 const SORT_OPTIONS = [
@@ -43,6 +39,7 @@ export default function Home() {
     useEffect(() => {
         const fetchProducts = async () => {
             const searchQuery = searchParams.get("searchQuery") || "";  // this will only exist fi user click search button
+            const filteredBy = searchParams.get("filteredBy") || "";
             const sortBy = searchParams.get("sortBy") || "reviews_desc";
             const page = Number(searchParams.get("page")) || 1;
         
@@ -56,6 +53,9 @@ export default function Home() {
             if (searchQuery.length >= 4) {
                 endpoint = `${API_BASE_URL}/products/search`;
                 params.searchQuery = searchQuery;
+            }
+            if (filteredBy) {
+                params.filteredBy = filteredBy;
             }
         
             const response = await axios.get(endpoint, { params });
@@ -106,6 +106,13 @@ export default function Home() {
         setSearchInput("");
     }
 
+    function addFilter() {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("filteredBy", "Electronics")
+        setSearchParams(newParams);
+        
+    }
+
 
     return (
         <div className="home">
@@ -124,6 +131,7 @@ export default function Home() {
                     <button onClick={searchProducts}>search</button>
                     <button onClick={clearResults}>Clear results</button>
                 </div>
+                <button onClick={addFilter}>add filter</button>
             </div>
             <div className="products">
             {

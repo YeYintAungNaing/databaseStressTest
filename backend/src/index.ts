@@ -1,4 +1,4 @@
-import express from "express"
+import express, { query } from "express"
 import db from "./db"
 import cors from "cors"
 
@@ -45,16 +45,35 @@ function getOrderClause(sortBy : string) : string {
 
 app.get("/products", async (req , res) => {
     try{ 
-        const limit = parseInt(req.query.limit as string) || 16;
-        const page = parseInt(req.query.page as string) || 1;
-        const offset = (page - 1) * limit;
+        const limit : number = parseInt(req.query.limit as string) || 16;
+        const page : number = parseInt(req.query.page as string) || 1;
+        const offset : number = (page - 1) * limit;
         const sortBy =  req.query.sortBy as string || "reviews_desc"
         const orderClause : string = getOrderClause(sortBy)
+        const filteredBy  = req.query.filteredBy as string || ""
+
+        let queryString;
+        let queryParams : any = [limit, offset];
         
-        const result = await db.query(
-            `SELECT * FROM "120k_products" ${orderClause} LIMIT $1 OFFSET $2`,
-            [limit, offset]
-        );
+
+        if (filteredBy) {
+          queryString = `
+            SELECT * FROM "120k_products" 
+            WHERE category = $1
+            ${orderClause} 
+            LIMIT $2 OFFSET $3
+          `;
+          queryParams = [filteredBy, ...queryParams]; 
+        } 
+        else {
+          queryString = `
+            SELECT * FROM "120k_products"
+            ${orderClause} 
+            LIMIT $1 OFFSET $2
+          `;
+        }
+        
+        const result = await db.query(queryString, queryParams);
         res.status(200).json(result.rows);
     }
     catch(e) {
@@ -64,20 +83,39 @@ app.get("/products", async (req , res) => {
 })
 
 
-app.get("/products/search", async (req, res) => {
-    
+app.get("/products/search", async (req, res) => { 
     try{
         const searchQuery = req.query.searchQuery as string
-        const limit = parseInt(req.query.limit as string) || 16;
-        const page = parseInt(req.query.page as string) || 1;
-        const offset = (page - 1) * limit;
+        const limit : number = parseInt(req.query.limit as string) || 16;
+        const page : number = parseInt(req.query.page as string) || 1;
+        const offset : number = (page - 1) * limit;
         const sortBy =  req.query.sortBy as string || "reviews_desc"
+        const filteredBy  = req.query.filteredBy as string || ""
         const orderClause : string = getOrderClause(sortBy)
+        
+        let queryString;
+        let queryParams : any = [`%${searchQuery}%`, limit, offset];
+        
 
-        const result = await db.query(
-            `SELECT * FROM "120k_products" WHERE "title" ILIKE $1 ${orderClause} LIMIT $2 OFFSET $3`,
-            [`%${searchQuery}%`, limit, offset]  
-        );
+        if (filteredBy) {
+          queryString = `
+            SELECT * FROM "120k_products" 
+            WHERE category = $1 AND "title" ILIKE $2
+            ${orderClause} 
+            LIMIT $3 OFFSET $4
+          `;
+          queryParams = [filteredBy, ...queryParams]; 
+        } 
+        else {
+          
+          queryString = `
+          SELECT * FROM "120k_products" 
+          WHERE "title" ILIKE $1 ${orderClause} 
+          LIMIT $2 OFFSET $3`;
+        }
+
+        const result = await db.query(queryString, queryParams);
+        //console.log(result)
         res.json(result.rows);
     }
 
