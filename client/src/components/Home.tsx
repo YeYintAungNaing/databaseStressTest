@@ -28,12 +28,36 @@ const SORT_OPTIONS = [
     { label: "Rating Low to High", value: "stars_asc" },
 ]
 
+const FILTERED_OPTIONS = [
+    { label: "Musical Instruments", value: "Musical Instruments" },
+    { label: "Gifts & Occasions", value: "Gifts & Occasions" },
+    { label: "Electronics", value: "Electronics" },
+    { label: "Home & Living", value: "Home & Living" },
+    { label: "Photography & Videography", value: "Photography & Videography" },
+    { label: "Home & Garden", value: "Home & Garden" },
+    { label: "Toys & Hobbies", value: "Toys & Hobbies" },
+    { label: "Sports & Outdoors", value: "Sports & Outdoors" },
+    { label: "Health & Personal Care", value: "Health & Personal Care" },
+    { label: "Food & Beverage", value: "Food & Beverage" },
+    { label: "Other", value: "Other" },
+    { label: "Baby & Kids", value: "Baby & Kids" },
+    { label: "Office & Stationery", value: "Office & Stationer" },
+    { label: "Pets", value: "Pets" },
+    { label: "Arts & Crafts", value: "Arts & Crafts" },
+    { label: "Grocery & Gourmet", value: "Grocery & Gourmet" },
+    { label: "Miscellaneous", value: "Miscellaneous" },
+    { label: "Fashion & Apparel", value: "Fashion & Apparel" },
+    { label: "Automotive & Accessories", value: "Automotive & Accessories" },
+    { label: "Industrial & Tools", value: "Industrial & Tools" }
+]
+
 export default function Home() {
 
     const [products, setProducts] = useState<Product[]>([]);
     const [searchInput, setSearchInput] = useState<string>("")
     const [searchParams, setSearchParams] = useSearchParams();
     const sort = searchParams.get("sortBy") || "reviews_desc";
+    const filter = searchParams.get("filteredBy") || "";
     const currentPage = parseInt(searchParams.get("page") || "1");
 
     useEffect(() => {
@@ -92,13 +116,6 @@ export default function Home() {
         });
     };
 
-    function handleSortChange(newSort: string) {
-        const nextParams = new URLSearchParams(searchParams);
-        nextParams.set("sortBy", newSort);
-        nextParams.set("page", "1");
-        setSearchParams(nextParams);
-    };
-
     function clearResults() {
         const newParams = new URLSearchParams(searchParams);
         newParams.delete("searchQuery");
@@ -106,12 +123,26 @@ export default function Home() {
         setSearchInput("");
     }
 
-    function addFilter() {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("filteredBy", "Electronics")
-        setSearchParams(newParams);
+    // function addFilter() {
+    //     const newParams = new URLSearchParams(searchParams);
+    //     newParams.set("filteredBy", "Electronics")
+    //     setSearchParams(newParams);
         
-    }
+    // }
+
+    function handleSortChange(newSort: string) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("sortBy", newSort);
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+    };
+
+    function handleFilterChange(newFilter: string) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("filteredBy", newFilter);
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+    };
 
 
     return (
@@ -131,7 +162,15 @@ export default function Home() {
                     <button onClick={searchProducts}>search</button>
                     <button onClick={clearResults}>Clear results</button>
                 </div>
-                <button onClick={addFilter}>add filter</button>
+                <div className="dropdown-container">
+                    <select value={filter} onChange={(e) => handleFilterChange(e.target.value)}>
+                    {FILTERED_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                        {option.label}
+                        </option>
+                    ))}
+                    </select>
+                </div>
             </div>
             <div className="products">
             {
