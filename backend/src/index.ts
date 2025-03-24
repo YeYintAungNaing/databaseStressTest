@@ -58,7 +58,7 @@ app.get("/products", async (req , res) => {
 
         if (filteredBy) {
           queryString = `
-            SELECT * FROM "120k_products" 
+            SELECT * FROM one_million_products 
             WHERE category = $1
             ${orderClause} 
             LIMIT $2 OFFSET $3
@@ -67,7 +67,7 @@ app.get("/products", async (req , res) => {
         } 
         else {
           queryString = `
-            SELECT * FROM "120k_products"
+            SELECT * FROM one_million_products
             ${orderClause} 
             LIMIT $1 OFFSET $2
           `;
@@ -99,7 +99,7 @@ app.get("/products/search", async (req, res) => {
 
         if (filteredBy) {
           queryString = `
-            SELECT * FROM "120k_products" 
+            SELECT * FROM one_million_products 
             WHERE category = $1 AND "title" ILIKE $2
             ${orderClause} 
             LIMIT $3 OFFSET $4
@@ -109,7 +109,7 @@ app.get("/products/search", async (req, res) => {
         else {
           
           queryString = `
-          SELECT * FROM "120k_products" 
+          SELECT * FROM one_million_products 
           WHERE "title" ILIKE $1 ${orderClause} 
           LIMIT $2 OFFSET $3`;
         }
@@ -128,3 +128,5 @@ app.get("/products/search", async (req, res) => {
 app.listen(7000, () => {
     console.log('connected to backend')
 })
+
+

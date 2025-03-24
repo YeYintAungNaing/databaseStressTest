@@ -340,17 +340,17 @@ async function updateCategoriesBatch(limit: number, offset: number) {
     try {
       await client.query('BEGIN'); 
       const res = await client.query(
-        'SELECT id, subcategory FROM "120k_products" WHERE category IS NULL LIMIT $1 OFFSET $2',
+        'SELECT id, subcategory FROM one_million_products WHERE category IS NULL LIMIT $1 OFFSET $2',
         [limit, offset]
       );
   
-      const failedUpdates: { id: number, subcategory: string }[] = [];
+      const failedUpdates: { id: string, subcategory: string }[] = [];
   
       for (const row of res.rows) {
         const generalizedCategory = categoryMap[row.subcategory] || "Other";
   
         const result = await client.query(
-          `UPDATE "120k_products" SET category = $1 WHERE id = $2`,
+          `UPDATE one_million_products SET category = $1 WHERE id = $2`,
           [generalizedCategory, row.id]
         );
   
@@ -374,15 +374,17 @@ async function updateCategoriesBatch(limit: number, offset: number) {
       client.release();
     }
   }
-  
+
+
+
   async function runBatches() {
-    const totalRows = 119852;
-    const batchSize = 1000;
+    const totalRows =  999860;
+    const batchSize = 5000;
   
     for (let offset = 0; offset < totalRows; offset += batchSize) {
       try {
         await updateCategoriesBatch(batchSize, offset);
-        console.log(`Processed batch starting at offset ${offset}`);
+        //console.log(`Processed batch starting at offset ${offset}`);
       } catch (err) {
         console.error(`Error processing batch starting at offset ${offset}:`, err);
       }
